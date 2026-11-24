@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análisis de escenarios · Scharffen Berger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Versión 3 para el Directorio: recomendación = Escenario 4. Mismo estilo que la v13; modelo = Excel v3 (flujo anual). */
+:root{
+  --bg:#1B110C; --ink:#F3E7D8; --muted:#C7B29C; --line:#4B3427;
+  --gold:#C9A25E; --gold-soft:#3A2A1C; --accent-soft:#3B291D;
+  --ok:#93BB7F; --warn:#E3B260; --bad:#E36F5C; --crit:#FFA79A; --teal:#5FB8B0;
+  --display:"Cormorant Garamond",Georgia,serif; --body:"Work Sans","Segoe UI",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{background:var(--bg)}
+body{color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;background-color:var(--bg);
+  background-image:radial-gradient(1200px 600px at 85% -10%, rgba(201,162,94,.10), transparent 60%),radial-gradient(900px 500px at -10% 30%, rgba(181,82,63,.08), transparent 60%);background-attachment:fixed}
+.wrap{max-width:1360px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:30px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:56px;font-weight:600;line-height:1.02}
+h1 em{font-style:italic;font-weight:500;color:var(--gold)}
+h2{font-size:32px;font-weight:600;display:flex;align-items:center;gap:14px}
+h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+h3{font-size:20px;font-weight:600}
+.eyebrow{font-weight:600;font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+.lede{color:var(--muted);max-width:76ch;margin:6px 0 0}
+header{position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--line);min-height:280px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:44px 40px 36px;
+  background:radial-gradient(700px 320px at 78% 30%, #4A2C1C 0%, #2A1810 55%, #1E130D 100%)}
+header > *{position:relative;z-index:1}
+header canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+header::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg, rgba(27,17,12,.92) 0%, rgba(27,17,12,.55) 48%, rgba(27,17,12,0) 75%)}
+header .lede{color:#DCC9B3;max-width:62ch}
+.panel{background:linear-gradient(180deg,rgba(52,34,25,.92),rgba(38,25,18,.92));border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:inset 0 1px 0 rgba(243,231,216,.05),0 24px 50px -30px rgba(0,0,0,.8)}
+.controls{display:flex;flex-wrap:wrap;gap:18px 30px;align-items:flex-start}
+.ctl{display:flex;flex-direction:column;gap:6px}
+.ctl .lbl,.ctl label{font-size:12px;color:var(--muted);font-weight:500}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:500 14px var(--body);background:transparent;color:var(--ink);border:0;padding:8px 14px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button small{display:block;font:500 11px var(--mono);opacity:.8;margin-top:2px}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#1B110C;font-weight:600}
+input[type=number],select{font:500 14px var(--mono);padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input[type=number]{width:110px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn{font:600 14px var(--body);background:var(--gold);color:#1B110C;border:1px solid var(--gold);border-radius:8px;padding:8px 14px;cursor:pointer}
+.desc{font-size:13px;color:var(--muted);max-width:80ch;margin-top:2px}
+.desc b{color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{background:linear-gradient(180deg,rgba(52,34,25,.95),rgba(38,25,18,.95));border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:12px;padding:14px 16px}
+.kpi .v{color:#F6E3C2;font:600 32px var(--display);line-height:1.15;font-variant-numeric:lining-nums tabular-nums}
+.kpi .v small{font:500 15px var(--body);color:var(--muted)}
+.kpi .k{font-size:12px;color:var(--muted)}
+.kpi .k b{color:var(--ink);font-family:var(--mono)}
+.kpi.alert{border-top-color:var(--bad)} .kpi.good{border-top-color:var(--ok)}
+.diagram{overflow-x:auto;padding:16px}
+.dwrap{position:relative;min-width:1060px;container-type:inline-size}
+.dwrap svg{display:block;width:100%;height:auto}
+.dov{position:absolute;inset:0;pointer-events:none;--u:calc(100cqw / 1420)}
+.oc{position:absolute;pointer-events:auto;display:flex;align-items:center;gap:calc(var(--u)*6);font:500 calc(var(--u)*12) var(--body);color:var(--muted)}
+.oc label{display:inline-flex;align-items:center;gap:calc(var(--u)*4);white-space:nowrap}
+.oc select{font:600 calc(var(--u)*12) var(--mono);height:calc(var(--u)*24);padding:0 calc(var(--u)*4);border-radius:calc(var(--u)*5)}
+.oc input[type=checkbox]{width:calc(var(--u)*14);height:calc(var(--u)*14);margin:0;accent-color:var(--gold)}
+figcaption,.note{font-size:13px;color:var(--muted)}
+figcaption{margin-top:8px;padding:0 8px}
+.n-box{fill:#2F1F17;stroke:var(--line);stroke-width:1.5}
+.n-box.bott{stroke:var(--bad);stroke-width:2.5}
+.n-box.ext{stroke-dasharray:6 5;stroke:var(--muted)}
+.n-box.fut{stroke-dasharray:6 5;stroke:var(--gold);fill:#2A1D14}
+.n-inner{fill:var(--accent-soft);stroke:var(--line)}
+.t-title{font:600 18px var(--display);fill:#F6E3C2}
+.t-sm{font:400 12px var(--body);fill:var(--muted)}
+.t-num{font:600 14px var(--mono);fill:#E9C987}
+.t-lab{font:italic 12px var(--body);fill:var(--muted)}
+.t-q{font:700 12px var(--mono);fill:var(--bad);letter-spacing:.1em}
+.bar-bg{fill:var(--line)}
+.edge{fill:none;stroke:var(--muted);stroke-width:1.6}
+.edge.dash{stroke-dasharray:5 5}
+.tri{fill:var(--gold-soft);stroke:var(--gold);stroke-width:1.4}
+.tri.queue{fill:var(--bad);stroke:var(--bad);fill-opacity:.25}
+.ah{fill:var(--muted)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px}
+.chart svg{display:block;width:100%;height:auto}
+.ax{font:400 12px var(--body);fill:var(--muted)}
+.axn{font:500 12px var(--mono);fill:var(--muted)}
+.lab{font:600 12px var(--mono);fill:var(--ink)}
+.gridl{stroke:var(--line);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:22px;height:0;border-top:2.5px solid}
+.legend i.sw{height:11px;border:0;border-radius:3px;width:14px}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:600 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:#24170F}
+td.num,th.num{text-align:right;white-space:nowrap}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.sel td{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+tr.click{cursor:pointer} tr.click:hover td{background:rgba(201,162,94,.07)}
+tr.tot td{font-weight:600;color:#F6E3C2;border-top:1px solid var(--gold)}
+tr.grp td{font:600 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);background:#21150E}
+.pill{display:inline-block;font:600 12px var(--mono);padding:2px 8px;border-radius:999px;color:#1B110C;white-space:nowrap}
+.tag{display:inline-block;font:600 10px var(--mono);padding:1px 7px;border-radius:999px;border:1px solid var(--gold);color:var(--gold);margin-left:6px;vertical-align:middle}
+section{display:flex;flex-direction:column;gap:14px}
+@media (max-width:700px){h1{font-size:34px}header{padding:30px 20px 26px;min-height:220px}.wrap{padding:20px 16px 48px}h2{font-size:26px}.two{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <canvas id="beans" aria-hidden="true"></canvas>
+  <div class="eyebrow">Scharffen Berger · Caso HBS 607-S43 · Dirección de Operaciones · EMBA UTDT · Grupo 4</div>
+  <h1>Análisis <em>de</em> escenarios</h1>
+  <p class="lede">El escenario que recomendamos al Directorio es el 4: molino de bolas, 2.º turno de tostado, una 2.ª mezcladora usada y terceros turnos solo cuando los pidan los pedidos. Con US$ 350 mil, la capacidad pasa de 27,5 a 68,4 lotes de 1.400 kg por mes. Elegí un escenario y un nivel de demanda para ver dónde se traba la planta y cuánto valor crea cada opción.</p>
+</header>
+
+<div class="panel controls" role="group" aria-label="Palancas">
+  <div class="ctl" style="flex-basis:100%">
+    <span class="lbl" id="l-esc">Escenario de inversión</span>
+    <div class="seg" id="escseg" aria-labelledby="l-esc"></div>
+    <div class="desc" id="escdesc"></div>
+  </div>
+  <div class="ctl">
+    <span class="lbl" id="l-dem">Demanda a inicios de 2006 (caso p. 10)</span>
+    <div class="seg" id="demseg" aria-labelledby="l-dem">
+      <button type="button" data-v="0">Baja<small>+50 %</small></button>
+      <button type="button" data-v="1" aria-pressed="true">Media<small>+100 %</small></button>
+      <button type="button" data-v="2">Alta<small>+150 %</small></button>
+    </div>
+  </div>
+  <div class="ctl">
+    <span class="lbl" id="l-anio">Año que muestra el diagrama</span>
+    <div class="seg" id="anioseg" aria-labelledby="l-anio"></div>
+  </div>
+  <div class="ctl">
+    <label for="c-venta">Ventas por lote (US$)</label>
+    <input type="number" id="c-venta" data-p="venta_lote" min="5000" step="1000">
+  </div>
+  <div class="ctl">
+    <label for="c-mc">Margen de contribución (%)</label>
+    <input type="number" id="c-mc" data-p="mc" data-scale="100" min="1" max="99" step="1">
+  </div>
+  <div class="ctl">
+    <span class="lbl">Volver al caso base</span>
+    <button type="button" class="btn" id="reset">Escenario 4 · demanda media</button>
+  </div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<section>
+  <h2>Dónde se traba la planta</h2>
+  <figure class="panel diagram" style="margin:0">
+    <div class="dwrap"><svg id="flow" viewBox="0 0 1420 760" role="img" aria-label="Diagrama de la línea de producción de Scharffen Berger con la capacidad y la carga de cada etapa"></svg><div class="dov" id="dov"></div></div>
+    <figcaption>Cada recuadro es una etapa: su capacidad efectiva en lotes por mes y una barra con su carga (demanda del año ÷ capacidad): verde por debajo de 70 %, ámbar hasta 90 %, rojo por encima. El borde rojo marca el cuello de botella, la etapa que limita a toda la planta. Los selectores debajo de cada etapa cambian los turnos o los equipos y crean un «escenario a medida».</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Escenarios analizados</h2>
+  <p class="lede" style="margin:0">Cada escenario suma un ajuste al anterior. Todos se comparan con el Escenario Base (la planta de hoy, sin molino). Hacé clic en una fila para elegirla.</p>
+  <div class="panel tbl-wrap" style="padding:0"><table id="esctbl" style="min-width:980px"></table></div>
+  <div class="panel"><h3>Por qué el Escenario 4 y no el 3</h3><p class="note" style="margin:4px 0 0">Los dos crean casi el mismo valor. El 4 paga US$ 50 mil por una 2.ª mezcladora usada: evita el turno noche en una máquina de los años veinte y deja un equipo de respaldo.</p><div class="kpis" id="vs34" style="margin-top:12px"></div></div>
+  <div class="two">
+    <div class="panel"><h3 id="caph">Capacidad frente a la demanda de enero de 2006</h3><div class="chart" id="capchart"></div><div class="legend" id="capleg"></div></div>
+    <div class="panel"><h3>Valor que crea cada escenario (VAN, US$ millones)</h3><div class="chart" id="vanchart"></div><div class="legend" id="vanleg"></div></div>
+  </div>
+</section>
+
+<section>
+  <h2 id="anioh">Año por año</h2>
+  <div class="two">
+    <div class="panel"><h3 id="yh">Demanda, capacidad y ventas</h3><div class="chart" id="ychart"></div><div class="legend" id="yleg"></div></div>
+    <div class="panel tbl-wrap"><h3 id="flh">Flujo de fondos (US$ miles)</h3><table id="fltbl" style="margin-top:10px"></table><p class="note" id="flnote"></p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Supuestos principales</h2>
+  <div class="panel tbl-wrap" style="padding:0"><table id="suptbl" style="min-width:760px"></table></div>
+  <p class="note">Unidad: lote de 1.400 kg de chocolate. Años de junio a mayo (año 1 = jun-05 a may-06). Capacidad efectiva = capacidad de la etapa más lenta × 94 %, la eficiencia que la planta muestra hoy. Ventas = lo que pide la demanda, hasta la capacidad efectiva. Los turnos se calculan con la producción de cada año. Mismo cálculo que el Excel v3 del TP.</p>
+</section>
+
+</div>
+
+<script>
+/* ======== SUPUESTOS (iguales al Excel v3) ======== */
+const BASE = {h_turno:8, dias_mes:365/12, lote_kg:1400, aditivos:20, limp_kg:200, limp_h:0.25, limp_dias:6, rend_limp:0.96, tost_kg:250, tost_h:1.5,
+  desc_kgh:450, rend_desc:185/250, mezc_kg:115, mezc_h:1.25, ref_n:2, ref_h_molino:12, molino_h:3, mold_kgh:140, prod_real:27.5, u_obj:0.9,
+  dem_hoy:29, crec:[0.5,1,1.5], g_anual:0.15, venta_lote:33000, mc:0.4, estructura:0.05, costo_puesto:70000,
+  p_limp:1, p_tost:1, p_desc:1, p_mezc:1, p_mold:2, capex_molino:300000, capex_mezc:50000,
+  ct_pt:1.5, ct_granos:3, granos_pct:0.15, ct_cobro:30, tasa:0.15, t_imp:0.4, vida:7,
+  mes_turnos:2, mes_mezc:5}; // puesta en marcha del año 1 (1 = junio de 2005): turnos nuevos desde julio, 2.ª mezcladora en octubre
+// mezcla: participación, % cacao, h de refinado sin molino
+const MIX = [[0.10,0.99,40],[0.10,0.82,45],[0.25,0.70,50],[0.25,0.62,50],[0.22,0.60,52],[0.08,0.41,60]];
+const ESC = [
+ {code:"Base", nombre:"Escenario Base", corto:"Planta actual, sin molino", txt:"La planta de hoy: las refinadoras limitan la producción a ~29 lotes por mes.", molino:0, limp:1, tost:1, desc:1, nMezc:1, tMezc:2, mold:2},
+ {code:"1", nombre:"Escenario 1", corto:"Molino con los turnos actuales", txt:"Se instala el molino de bolas y no se cambia nada más.", molino:1, limp:1, tost:1, desc:1, nMezc:1, tMezc:2, mold:2},
+ {code:"2", nombre:"Escenario 2", corto:"Molino + 2.º turno de tostado", txt:"Además del molino, se agrega un turno en la tostadora.", molino:1, limp:1, tost:2, desc:1, nMezc:1, tMezc:2, mold:2},
+ {code:"3", nombre:"Escenario 3", corto:"Molino + turnos según la demanda", txt:"Hasta 3 turnos en tostado, mezcladora y moldeo, y 2 en limpieza y descascarado, sin otra inversión: la única mezcladora trabaja de noche.", molino:1, limp:2, tost:3, desc:2, nMezc:1, tMezc:3, mold:3},
+ {code:"4", nombre:"Escenario 4", corto:"Molino + 2.ª mezcladora + turnos según la demanda", txt:"Como el 3, pero con una 2.ª mezcladora usada (US$ 50 mil): dos máquinas a dos turnos, sin turno noche y con respaldo.", molino:1, limp:2, tost:3, desc:2, nMezc:2, tMezc:2, mold:3}
+];
+const NOMBRE = {limp:"Limpieza", tost:"Tostado", desc:"Descascarado", mezc:"Mezclado", ref:"Refinado", mol:"Molino de bolas", mold:"Templado y moldeo"};
+const KEYS = ["limp","tost","desc","mezc","ref","mol","mold"];
+const STAGES = ["limp","tost","desc","mezc","mold"]; // etapas con turnos
+
+/* ======== FORMATO ======== */
+const $ = s => document.querySelector(s);
+const fmt = (v,d=0) => v==null||!isFinite(v) ? "n/d" : v.toLocaleString("es-AR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct = (v,d=0) => v==null||!isFinite(v) ? "n/d" : fmt(v*100,d)+" %";
+const usdM = (v,d=2) => v==null||!isFinite(v) ? "n/d" : "US$ "+fmt(v/1e6,d)+" M";
+const usdK = v => "US$ "+fmt(v/1000)+" mil";
+const color = c => c==null||!isFinite(c) ? "var(--muted)" : c>1 ? "var(--crit)" : c>0.9 ? "var(--bad)" : c>=0.7 ? "var(--warn)" : "var(--ok)";
+const PER = ["jun-05 a may-06","jun-06 a may-07","jun-07 a may-08","jun-08 a may-09","jun-09 a may-10"];
+
+/* ======== ESTADO ======== */
+const fresh = () => ({esc:4, dem:1, anio:2, venta_lote:BASE.venta_lote, mc:BASE.mc, custom:null});
+let S = fresh();
+const escAt = i => i==="m" ? S.custom : ESC[i];
+const cur = () => escAt(S.esc);
+
+/* ======== MODELO (réplica del Excel v3) ======== */
+function base(P){
+  const h = {limp:0,tost:0,desc:0,mezc:0,ref0:0,mold:P.lote_kg/P.mold_kgh}; let cacao=0, crudo=0;
+  MIX.forEach(([w,c,href])=>{ const nibs=P.lote_kg*c-P.aditivos, tos=nibs/P.rend_desc, cru=tos/P.rend_limp;
+    h.limp+=w*cru/P.limp_kg*P.limp_h; h.tost+=w*tos/P.tost_kg*P.tost_h; h.desc+=w*tos/P.desc_kgh; h.mezc+=w*nibs/P.mezc_kg*P.mezc_h; h.ref0+=w*href; cacao+=w*c; crudo+=w*cru; });
+  const hd = P.h_turno*P.dias_mes;
+  const cms = {limp:P.h_turno*P.limp_dias*P.dias_mes/7/h.limp, tost:hd/h.tost, desc:hd/h.desc, mezc:hd/h.mezc, ref0:hd/h.ref0, ref1:hd/P.ref_h_molino, mol:hd/P.molino_h, mold:hd/h.mold};
+  const D = {h, cms, cacao, crudo, hd};
+  D.eta = P.prod_real/caps(ESC[0],P,D).nom;
+  D.ct_pct = P.ct_pt/12*(1-P.mc)+P.ct_granos/12*P.granos_pct+P.ct_cobro/365;
+  return D;
+}
+function caps(e,P,D){
+  const c = {limp:e.limp*D.cms.limp, tost:e.tost*D.cms.tost, desc:e.desc*D.cms.desc, mezc:e.nMezc*e.tMezc*D.cms.mezc,
+    ref:P.ref_n*3*(e.molino?D.cms.ref1:D.cms.ref0), mol:e.molino?3*D.cms.mol:null, mold:e.mold*D.cms.mold};
+  let nom=Infinity, bott=null; KEYS.forEach(k=>{ if(c[k]!=null && c[k]<nom-1e-12){ nom=c[k]; bott=k; } });
+  return {c, nom, bott};
+}
+const maxOf = e => ({limp:e.limp, tost:e.tost, desc:e.desc, mezc:e.nMezc*e.tMezc, mold:e.mold});
+const baseT = () => maxOf(ESC[0]);
+const capexOf = (e,P) => e.molino*P.capex_molino + (e.nMezc-1)*P.capex_mezc;
+function demand(P,dem){ const d06=P.dem_hoy*(1+P.crec[dem]); return [ (P.dem_hoy+d06)/2, d06*(1+P.g_anual), d06*Math.pow(1+P.g_anual,2), d06*Math.pow(1+P.g_anual,3), d06*Math.pow(1+P.g_anual,4) ]; }
+// turnos: los que pide la producción del año (no la demanda), entre los de hoy y el máximo del escenario
+function turnos(e,P,D,prod){
+  const mx = maxOf(e), b = baseT();
+  return prod.map(q=>{ const u={}; let puestos=0;
+    STAGES.forEach(k=>{ const ped=Math.ceil(q/(D.eta*P.u_obj*D.cms[k])-1e-12); u[k]=Math.min(mx[k],Math.max(b[k],ped)); puestos+=(u[k]-b[k])*P["p_"+k]; });
+    return {u, puestos, costo:puestos*P.costo_puesto}; });
+}
+function flujo(e,P,dem){
+  const D = base(P), k = caps(e,P,D), capEf = D.eta*k.nom, kb = caps(ESC[0],P,D), capB = D.eta*kb.nom;
+  // año 1 = promedio de la puesta en marcha (hoja Capacidad, sección E): solo el molino → turnos del escenario con una mezcladora → escenario completo
+  const tramos = [D.eta*caps({...ESC[0], molino:e.molino},P,D).nom, D.eta*caps({...e, nMezc:Math.min(1,e.nMezc)},P,D).nom, capEf];
+  const meses = [P.mes_turnos-1, P.mes_mezc-P.mes_turnos, 13-P.mes_mezc];
+  const capY1 = meses.reduce((a,m,j)=>a+m*tramos[j],0)/12, capY = [capY1, capEf, capEf, capEf, capEf];
+  const Dm = demand(P,dem), prod = Dm.map((d,i)=>Math.min(d,capY[i])), T = turnos(e,P,D,prod), capex = capexOf(e,P);
+  let prevIng = 0, van = -capex; const cf=[-capex], Y=[];
+  Dm.forEach((d,i)=>{
+    const ventas = prod[i]*12, vBase = Math.min(d,capB)*12, inc = ventas-vBase, ing = inc*P.venta_lote, con = ing*P.mc;
+    const est = -ing*P.estructura, tur = -T[i].costo;
+    const ebitda = con+est+tur, tax = -P.t_imp*(ebitda-capex/P.vida), ctv = -D.ct_pct*(ing-prevIng), rec = i===4 ? D.ct_pct*ing : 0;
+    const f = ebitda+tax+ctv+rec; prevIng = ing; van += f/Math.pow(1+P.tasa,i+1); cf.push(f);
+    Y.push({d, ventas, vBase, inc, ing, con, est, tur, ebitda, tax, ctv, rec, f, puestos:T[i].puestos, u:T[i].u});
+  });
+  return {D, k, capEf, capB, capY, tramos, meses, Y, capex, van, tir:irr(cf), cf, ctMax: D.ct_pct*Math.max(0,...Y.map(y=>y.ing))};
+}
+function irr(cf){
+  const npv = r => cf.reduce((a,v,t)=>a+v/Math.pow(1+r,t),0);
+  let lo=-0.99, hi=50, flo=npv(lo), fhi=npv(hi); if(!(isFinite(flo)&&isFinite(fhi)) || flo*fhi>0) return null;
+  for(let i=0;i<200;i++){ const m=(lo+hi)/2, f=npv(m); if(f*flo>0){lo=m;flo=f;} else hi=m; } return (lo+hi)/2;
+}
+const P = () => ({...BASE, venta_lote:S.venta_lote, mc:S.mc});
+
+/* ======== DIAGRAMA ======== */
+const NS = "http://www.w3.org/2000/svg"; let svg;
+function el(tag,a={},t){ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); if(t!=null) e.textContent=t; svg.appendChild(e); return e; }
+function edge(pts,{dash=false,head=true,label=null,lx,ly,anchor="middle"}={}){ el("polyline",{points:pts.map(p=>p.join(",")).join(" "),class:"edge"+(dash?" dash":""),"marker-end":head?"url(#ah)":""}); if(label) el("text",{x:lx,y:ly,class:"t-lab","text-anchor":anchor},label); }
+function tri(cx,cy,label,sub,queue){ el("polygon",{points:`${cx-22},${cy-18} ${cx+22},${cy-18} ${cx},${cy+20}`,class:"tri"+(queue?" queue":"")}); el("text",{x:cx,y:cy+38,class:"t-lab","text-anchor":"middle"},label); if(sub) el("text",{x:cx,y:cy+52,class:"t-lab","text-anchor":"middle"},sub); if(queue) el("text",{x:cx,y:cy-26,class:"t-q","text-anchor":"middle"},"COLA"); }
+function bar(x,y,w,c){ el("rect",{x,y,width:w,height:9,rx:4,class:"bar-bg"}); if(c!=null&&isFinite(c)) el("rect",{x,y,width:Math.max(2,Math.min(1,c)*w),height:9,rx:4,fill:color(c)}); }
+function box(x,y,w,h,st){
+  el("rect",{x,y,width:w,height:h,rx:10,class:"n-box"+(st.bott?" bott":"")});
+  el("text",{x:x+12,y:y+24,class:"t-title"},st.titulo);
+  el("text",{x:x+12,y:y+44,class:"t-sm"},st.l2);
+  el("text",{x:x+12,y:y+72,class:"t-num"},`${fmt(st.capEf,1)} lotes/mes`);
+  bar(x+12,y+84,w-24,st.carga);
+  el("text",{x:x+12,y:y+114,class:"t-sm"},`Carga ${pct(st.carga)}${st.bott?" · cuello de botella":""}`);
+}
+function drawFlow(R){
+  svg=$("#flow"); svg.innerHTML="";
+  const d=el("defs"), m=document.createElementNS(NS,"marker"); Object.entries({id:"ah",viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"}).forEach(([k,v])=>m.setAttribute(k,v));
+  const p=document.createElementNS(NS,"path"); p.setAttribute("d","M0,0 L10,5 L0,10 z"); p.setAttribute("class","ah"); m.appendChild(p); d.appendChild(m);
+  const e=cur(), Pp=P(), Dd=R.D, y=R.Y[S.anio-1], dem=y.d, mx=maxOf(e), b=baseT();
+  const stg = k => { const cap=R.k.c[k]; return {capEf:Dd.eta*cap, carga:dem/(Dd.eta*cap), bott:R.k.bott===k}; };
+  const tur = k => { const used=y.u[k], max=mx[k]; return k==="mezc" ? `${e.nMezc} máq. · usa ${used} de ${max} turnos` : `usa ${used} de ${max} turno${max>1?"s":""} (hoy ${b[k]})`; };
+  const qB = {limp:"t0",tost:"t1",desc:"t2",mezc:"t3",ref:"t4",mol:"t4",mold:"t5"}[R.k.bott];
+  el("text",{x:20,y:36,class:"t-sm"},`Año ${S.anio} (${PER[S.anio-1]}) · demanda ${fmt(dem,1)} lotes por mes`);
+  tri(50,140,"Bodega","granos",qB==="t0"); edge([[72,140],[99,140]]);
+  box(100,70,200,130,{titulo:"1 · Limpieza",l2:tur("limp"),...stg("limp")});
+  edge([[300,140],[322,140]]); tri(345,140,"grano limpio",null,qB==="t1"); edge([[367,140],[389,140]]);
+  box(390,70,200,130,{titulo:"2 · Tostado",l2:tur("tost"),...stg("tost")});
+  edge([[590,140],[612,140]]); tri(635,140,"grano tostado",null,qB==="t2"); edge([[657,140],[679,140]]);
+  box(680,70,200,130,{titulo:"3 · Descascarado",l2:tur("desc"),...stg("desc")});
+  edge([[880,140],[902,140]]); tri(925,140,"pepitas",null,qB==="t3"); edge([[947,140],[969,140]]);
+  if(e.nMezc>1) el("rect",{x:978,y:62,width:200,height:130,rx:10,class:"n-box",style:"opacity:.5"});
+  box(970,70,200,130,{titulo:e.nMezc>1?"4 · Mezcladoras (2)":"4 · Mezcladora",l2:tur("mezc"),...stg("mezc")});
+  edge([[1170,140],[1202,140]]); tri(1225,140,"pasta",null,qB==="t4"); edge([[1247,140],[1280,140],[1280,309]]);
+  // refinadoras + molino
+  const r=stg("ref");
+  el("rect",{x:1160,y:310,width:240,height:150,rx:12,class:"n-box"+(r.bott?" bott":"")});
+  el("text",{x:1174,y:334,class:"t-title"},"5 · Refinadoras (2)");
+  el("text",{x:1174,y:354,class:"t-sm"},e.molino ? `24 h · ${fmt(Pp.ref_h_molino)} h por lote con molino` : `24 h · ${fmt(Dd.h.ref0,1)} h por lote sin molino`);
+  el("text",{x:1174,y:382,class:"t-num"},`${fmt(r.capEf,1)} lotes/mes`);
+  bar(1174,394,212,r.carga);
+  el("text",{x:1174,y:424,class:"t-sm"},`Carga ${pct(r.carga)}${r.bott?" · cuello de botella":""}`);
+  if(e.molino){ const mo=stg("mol");
+    edge([[1280,460],[1280,509]]);
+    el("rect",{x:1160,y:510,width:240,height:110,rx:10,class:"n-box"+(mo.bott?" bott":"")});
+    el("text",{x:1174,y:534,class:"t-title"},"5B · Molino de bolas");
+    el("text",{x:1174,y:554,class:"t-sm"},`US$ 300 mil · ${fmt(Pp.molino_h)} h por lote`);
+    el("text",{x:1174,y:580,class:"t-num"},`${fmt(mo.capEf,1)} lotes/mes`);
+    bar(1174,592,212,mo.carga);
+    edge([[1160,560],[1140,560],[1140,385],[1133,385]]);
+  } else {
+    edge([[1280,460],[1280,519]],{dash:true});
+    el("rect",{x:1160,y:520,width:240,height:80,rx:10,class:"n-box fut"});
+    el("text",{x:1174,y:546,class:"t-title"},"Molino de bolas (no incluido)");
+    el("text",{x:1174,y:566,class:"t-sm"},"US$ 300 mil · refinado en ~15 h");
+    edge([[1160,385],[1133,385]]);
+  }
+  // fila 2
+  tri(1110,385,"refinado",null,qB==="t5"); edge([[1088,385],[1061,385]]);
+  const t=stg("mold");
+  el("rect",{x:640,y:315,width:420,height:140,rx:10,class:"n-box"+(t.bott?" bott":"")});
+  el("text",{x:652,y:339,class:"t-title"},"6 · Templado y moldeo");
+  el("text",{x:652,y:359,class:"t-sm"},`${tur("mold")} · 140 kg/h`);
+  el("text",{x:652,y:387,class:"t-num"},`${fmt(t.capEf,1)} lotes/mes`);
+  bar(652,399,396,t.carga);
+  el("text",{x:652,y:429,class:"t-sm"},`Carga ${pct(t.carga)}${t.bott?" · cuello de botella":""}`);
+  edge([[640,385],[561,385]]);
+  el("rect",{x:300,y:330,width:260,height:110,rx:10,class:"n-box ext"});
+  el("text",{x:312,y:354,class:"t-title"},"7 · Empaque");
+  el("text",{x:312,y:374,class:"t-sm"},"propio (8 personas) y coempacadores");
+  el("text",{x:312,y:394,class:"t-sm"},"no limita: lo que no entra se terceriza");
+  edge([[300,385],[273,385]]); tri(250,385,"producto","terminado",false); edge([[228,385],[201,385]]);
+  el("rect",{x:40,y:345,width:160,height:80,rx:10,class:"n-box ext"});
+  el("text",{x:52,y:372,class:"t-title"},"Clientes");
+  const v = Math.min(dem,R.capEf);
+  el("text",{x:52,y:392,class:"t-sm"},`${fmt(v,1)} lotes vendidos`);
+  el("text",{x:52,y:410,class:"t-sm"},`${pct(v/dem)} de la demanda`);
+  // leyenda
+  const ly=720;
+  el("rect",{x:20,y:ly-14,width:28,height:18,rx:4,class:"n-box"}); el("text",{x:56,y:ly,class:"t-sm"},"Etapa");
+  el("rect",{x:120,y:ly-14,width:28,height:18,rx:4,class:"n-box bott"}); el("text",{x:156,y:ly,class:"t-sm"},"Cuello de botella");
+  el("polygon",{points:`300,${ly-14} 328,${ly-14} 314,${ly+6}`,class:"tri"}); el("text",{x:336,y:ly,class:"t-sm"},"Inventario");
+  el("polygon",{points:`420,${ly-14} 448,${ly-14} 434,${ly+6}`,class:"tri queue"}); el("text",{x:456,y:ly,class:"t-sm"},"Cola antes del cuello");
+  el("rect",{x:620,y:ly-14,width:28,height:18,rx:4,class:"n-box ext"}); el("text",{x:656,y:ly,class:"t-sm"},"Externo");
+  el("rect",{x:730,y:ly-14,width:28,height:18,rx:4,class:"n-box fut"}); el("text",{x:766,y:ly,class:"t-sm"},"No incluido en el escenario");
+  [["< 70 %","var(--ok)"],["70-90 %","var(--warn)"],["> 90 %","var(--bad)"],["> 100 %","var(--crit)"]].forEach(([tx,c],i)=>{ el("rect",{x:990+i*105,y:ly-9,width:24,height:9,rx:4,fill:c}); el("text",{x:1020+i*105,y:ly,class:"t-sm"},tx); });
+}
+function buildOverlay(){
+  const sel=(k,lab,opts)=>`<label>${lab}<select data-a="${k}" aria-label="${lab}">${opts.map(o=>`<option value="${o}">${o}</option>`).join("")}</select></label>`;
+  const oc=(x,y,w,h)=>`<div class="oc" style="left:calc(var(--u)*${x});top:calc(var(--u)*${y});width:calc(var(--u)*${w})">${h}</div>`;
+  $("#dov").innerHTML = [
+    oc(104,208,196,sel("limp","Turnos máx.",[1,2,3])), oc(394,208,196,sel("tost","Turnos máx.",[1,2,3])),
+    oc(684,208,196,sel("desc","Turnos máx.",[1,2,3])), oc(974,208,196,sel("nMezc","Máq.",[1,2])+sel("tMezc","Turnos/máq.",[1,2,3])),
+    oc(1174,436,220,`<label><input type="checkbox" data-a="molino">molino</label>`),
+    oc(644,463,300,sel("mold","Turnos máx.",[1,2,3]))
+  ].join("");
+}
+
+/* ======== KPIs ======== */
+function drawKpis(R){
+  const e=cur(), y=R.Y[S.anio-1], B=R.k.bott, cy=R.capY[S.anio-1], carga=y.d/cy, ef=R.D.eta;
+  const atend = Math.min(y.d,cy)/y.d, isBase = e.code==="Base", rampa = S.anio===1 && cy<R.capEf-0.05;
+  $("#kpis").innerHTML = `
+   <div class="kpi ${cy<y.d?"alert":"good"}"><div class="k">Capacidad efectiva</div><div class="v">${fmt(R.capEf,1)} <small>lotes/mes</small></div><div class="k">hoy ${fmt(R.capB,1)} · <b>${R.capEf>=R.capB?"+":""}${pct(R.capEf/R.capB-1)}</b>${rampa?` · año 1: <b>${fmt(cy,1)}</b> (puesta en marcha)`:""}</div></div>
+   <div class="kpi ${carga>0.9?"alert":""}"><div class="k">Cuello de botella</div><div class="v" style="font-size:26px">${NOMBRE[B]}</div><div class="k">carga del año ${S.anio}: <b>${pct(carga)}</b></div></div>
+   <div class="kpi ${atend<0.999?"alert":"good"}"><div class="k">Demanda atendida en el año ${S.anio}</div><div class="v">${pct(atend)}</div><div class="k">demanda ${fmt(y.d,1)} · ventas ${fmt(Math.min(y.d,cy),1)} lotes/mes</div></div>
+   <div class="kpi ${R.van<0?"alert":"good"}"><div class="k">Valor que crea (VAN, 5 años al 15 %)</div><div class="v">${isBase?"—":usdM(R.van)}</div><div class="k">${isBase?"es la referencia":"TIR <b>"+pct(R.tir)+"</b> · frente al Escenario Base"}</div></div>
+   <div class="kpi"><div class="k">Inversión</div><div class="v">${usdK(R.capex)}</div><div class="k">${[e.molino?"molino 300":null,e.nMezc>1?"mezcladora 50":null].filter(Boolean).join(" + ")||"sin inversión"}${R.capex?" (US$ mil)":""}</div></div>
+   <div class="kpi"><div class="k">Capital de trabajo máximo</div><div class="v">${isBase?"—":usdM(R.ctMax,1)}</div><div class="k">${pct(R.D.ct_pct,1)} de las ventas adicionales</div></div>`;
+}
+
+/* ======== TABLA Y GRÁFICOS DE ESCENARIOS ======== */
+function allEsc(){ const l=ESC.map((e,i)=>({e,i})); if(S.custom) l.push({e:S.custom,i:"m"}); return l; }
+function drawEscTable(){
+  const Pp=P(), d06=Pp.dem_hoy*(1+Pp.crec[S.dem]);
+  const rows = allEsc().map(({e,i})=>{ const R=flujo(e,Pp,S.dem), sel=(i===S.esc), isB=e.code==="Base";
+    const vans=[0,1,2].map(dm=>flujo(e,Pp,dm).van), y2=R.Y[1], at2=Math.min(y2.d,R.capEf)/y2.d;
+    return `<tr class="click ${sel?"sel":""}" data-pick="${i}"><td><b>${e.nombre}</b>${e.code==="4"?'<span class="tag">recomendado</span>':""}<br><span class="note">${e.corto}</span></td>
+      <td class="num">${fmt(R.capex/1000)}</td><td class="num">${fmt(R.capEf,1)}</td><td>${NOMBRE[R.k.bott]}</td>
+      <td class="num"><span class="pill" style="background:${color(d06/R.capEf)}">${pct(d06/R.capEf)}</span></td><td class="num">${pct(at2)}</td>
+      ${vans.map((v,j)=>`<td class="num" style="${j===S.dem?"color:#F6E3C2;font-weight:600":""}">${isB?"—":fmt(v/1e6,2)}</td>`).join("")}
+      <td class="num">${isB||R.tir==null?"—":pct(R.tir)}</td></tr>`; }).join("");
+  $("#esctbl").innerHTML = `<thead><tr><th>Escenario</th><th class="num">Inversión (US$ mil)</th><th class="num">Capacidad efectiva (lotes/mes)</th><th>Cuello de botella</th><th class="num">Carga en ene-06</th><th class="num">Demanda atendida año 2</th><th class="num">VAN demanda baja (US$ M)</th><th class="num">VAN demanda media</th><th class="num">VAN demanda alta</th><th class="num">TIR</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function drawEscCharts(){
+  const Pp=P(), list=allEsc().map(({e,i})=>({e,i,R:flujo(e,Pp,S.dem)})), d06=Pp.dem_hoy*(1+Pp.crec[S.dem]);
+  // capacidad horizontal
+  const W=640, L=150, rh=40, T=40, H=T+list.length*rh+20, vmax=Math.max(d06,...list.map(x=>x.R.capEf))*1.1, X=v=>L+v/vmax*(W-L-60);
+  let s=`<line x1="${X(d06)}" x2="${X(d06)}" y1="${T-8}" y2="${H-12}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="5 4"/><text class="ax" x="${X(d06)}" y="${T-14}" text-anchor="middle" style="fill:var(--ink)">demanda ene-06: ${fmt(d06,1)}</text>`;
+  list.forEach((x,j)=>{ const yy=T+j*rh, sel=x.i===S.esc, ok=x.R.capEf>=d06;
+    s+=`<text class="ax" x="${L-10}" y="${yy+20}" text-anchor="end" style="${sel?"fill:var(--ink);font-weight:600":""}">${x.e.nombre}</text>`;
+    s+=`<rect x="${L}" y="${yy+6}" width="${Math.max(2,X(x.R.capEf)-L)}" height="20" rx="4" fill="${x.e.code==="4"?"var(--teal)":ok?"var(--gold)":"#6E4F3A"}" ${sel?'stroke="var(--ink)" stroke-width="1.5"':""}><title>${x.e.nombre}: ${fmt(x.R.capEf,1)} lotes/mes; cuello en ${NOMBRE[x.R.k.bott].toLowerCase()}</title></rect>`;
+    s+=`<text class="lab" x="${X(x.R.capEf)+6}" y="${yy+21}">${fmt(x.R.capEf,1)}</text>`; });
+  $("#capchart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Capacidad efectiva por escenario frente a la demanda de enero de 2006">${s}</svg>`;
+  $("#capleg").innerHTML=`<span><i class="sw" style="background:var(--teal)"></i>Escenario 4 (recomendado)</span><span><i class="sw" style="background:var(--gold)"></i>Cubre la demanda</span><span><i class="sw" style="background:#6E4F3A"></i>No la cubre</span>`;
+  // VAN vertical
+  const vl=list.filter(x=>x.e.code!=="Base"), W2=640, H2=280, L2=50, T2=30, B2=40, pw=W2-L2-20, ph=H2-T2-B2;
+  const vals=vl.map(x=>x.R.van), mx=Math.max(1e6,...vals), mn=Math.min(0,...vals), Yv=v=>T2+(mx-v)/(mx-mn)*ph, gw=pw/vl.length, bw=Math.min(60,gw*0.55);
+  let v=`<line x1="${L2}" x2="${W2-20}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="var(--muted)"/>`;
+  vl.forEach((x,j)=>{ const bx=L2+j*gw+(gw-bw)/2, y0=Yv(Math.max(0,x.R.van)), y1=Yv(Math.min(0,x.R.van)), sel=x.i===S.esc;
+    v+=`<rect x="${bx}" y="${y0}" width="${bw}" height="${Math.max(1,y1-y0)}" rx="4" fill="${x.e.code==="4"?"var(--teal)":"#8E6B4F"}" ${sel?'stroke="var(--ink)" stroke-width="1.5"':""}><title>${x.e.nombre}: VAN ${usdM(x.R.van)}</title></rect>`;
+    v+=`<text class="lab" x="${bx+bw/2}" y="${x.R.van>=0?y0-6:y1+14}" text-anchor="middle">${fmt(x.R.van/1e6,1)}</text>`;
+    v+=`<text class="ax" x="${bx+bw/2}" y="${H2-14}" text-anchor="middle" style="${sel?"fill:var(--ink);font-weight:600":""}">${x.e.code==="m"?"A medida":"Esc. "+x.e.code}</text>`; });
+  $("#vanchart").innerHTML=`<svg viewBox="0 0 ${W2} ${H2}" role="img" aria-label="VAN por escenario">${v}</svg>`;
+  $("#vanleg").innerHTML=`<span>Demanda ${["baja (+50 %)","media (+100 %)","alta (+150 %)"][S.dem]} · 5 años al 15 %, después de impuestos, inversión y capital de trabajo</span>`;
+}
+
+/* ======== AÑO POR AÑO ======== */
+function drawYears(R){
+  const e=cur(), W=640, H=300, L=50, T=24, B=40, pw=W-L-20, ph=H-T-B, ymax=Math.ceil(Math.max(...R.Y.map(y=>y.d),R.capEf)/20)*20, Yy=v=>T+ph-v/ymax*ph, gw=pw/5, bw=gw*0.5, X=i=>L+i*gw+gw/2;
+  let s=""; for(let v=0;v<=ymax;v+=20) s+=`<line class="gridl" x1="${L}" x2="${W-20}" y1="${Yy(v)}" y2="${Yy(v)}"/><text class="axn" x="${L-8}" y="${Yy(v)+4}" text-anchor="end">${v}</text>`;
+  R.Y.forEach((y,i)=>{ const vv=Math.min(y.d,R.capY[i]), sel=i+1===S.anio;
+    s+=`<rect x="${X(i)-bw/2}" y="${Yy(vv)}" width="${bw}" height="${Yy(0)-Yy(vv)}" rx="4" fill="${e.code==="4"?"var(--teal)":"var(--gold)"}" fill-opacity="${sel?1:.75}" data-anio="${i+1}" style="cursor:pointer"><title>Año ${i+1}: ventas ${fmt(vv,1)} · demanda ${fmt(y.d,1)} lotes/mes</title></rect>`;
+    s+=`<text class="lab" x="${X(i)}" y="${Yy(vv)-8}" text-anchor="middle">${fmt(vv,0)}</text><text class="ax" x="${X(i)}" y="${H-18}" text-anchor="middle" style="${sel?"fill:var(--ink);font-weight:600":""}">Año ${i+1}</text>`; });
+  s+=`<polyline points="${R.Y.map((y,i)=>X(i)+","+Yy(y.d)).join(" ")}" fill="none" stroke="var(--ink)" stroke-width="2"/>`+R.Y.map((y,i)=>`<circle cx="${X(i)}" cy="${Yy(y.d)}" r="4" fill="var(--ink)"/>`).join("");
+  s+=`<polyline points="${R.capY.map((c,i)=>(L+i*gw)+","+Yy(c)+" "+(L+(i+1)*gw)+","+Yy(c)).join(" ")}" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="6 4"/><line x1="${L}" x2="${W-20}" y1="${Yy(R.capB)}" y2="${Yy(R.capB)}" stroke="var(--muted)" stroke-width="1.5"/>`;
+  $("#ychart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Demanda, capacidad y ventas por año">${s}</svg>`;
+  $("#yh").textContent=`${e.nombre}: demanda, capacidad y ventas (lotes/mes)`;
+  $("#yleg").innerHTML=`<span><i class="sw" style="background:${e.code==="4"?"var(--teal)":"var(--gold)"}"></i>Ventas</span><span><i style="border-color:var(--ink)"></i>Demanda</span><span><i style="border-color:var(--gold);border-top-style:dashed"></i>Capacidad efectiva del escenario (año 1: puesta en marcha)</span><span><i style="border-color:var(--muted)"></i>Capacidad de hoy</span>`;
+  // flujo de fondos
+  const isB=e.code==="Base";
+  $("#flh").textContent=`Flujo de fondos de ${e.nombre} frente al Escenario Base (US$ miles)`;
+  if(isB){ $("#fltbl").innerHTML=""; $("#flnote").textContent="El Escenario Base es la referencia: su flujo adicional es cero."; return; }
+  const rows=[["Ventas adicionales (lotes/año)","inc",1],["Ingresos adicionales","ing"],["Contribución adicional","con"],["Estructura (5 %)","est"],["Turnos nuevos","tur"],["EBITDA adicional","ebitda",0,1],["Impuestos","tax"],["Capital de trabajo","ctv"],["Recupero de capital de trabajo","rec"],["Flujo de fondos","f",0,1]];
+  const c=(v,q)=>v==null?"":`<span style="${v<-0.5?"color:var(--crit)":""}">${fmt(q?v:v/1000)}</span>`;
+  $("#fltbl").innerHTML=`<thead><tr><th>Concepto</th><th class="num">Año 0</th>${R.Y.map((_,i)=>`<th class="num">Año ${i+1}</th>`).join("")}</tr></thead><tbody>
+    <tr><td>Inversión</td><td class="num">${c(-R.capex)}</td>${R.Y.map(()=>"<td></td>").join("")}</tr>
+    ${rows.map(([n,k,q,tot])=>`<tr class="${tot?"tot":""}"><td>${n}</td><td class="num">${k==="f"?c(-R.capex):""}</td>${R.Y.map(y=>`<td class="num">${c(y[k],q)}</td>`).join("")}</tr>`).join("")}
+    <tr class="tot"><td>VAN al 15 %</td><td class="num">${fmt(R.van/1000)}</td><td colspan="5" class="note">TIR ${pct(R.tir)} · capital de trabajo máximo ${usdM(R.ctMax,1)}</td></tr></tbody>`;
+  $("#flnote").textContent=`Capacidad del año 1 con la puesta en marcha: ${fmt(R.capY[0],1)} lotes/mes (${R.meses.map((m,j)=>m+" "+(m===1?"mes":"meses")+" a "+fmt(R.tramos[j],1)).join(", ")}). Puestos-turno nuevos por año: ${R.Y.map(y=>y.puestos).join(" · ")}. Impuestos: 40 % sobre el EBITDA menos la depreciación (inversión ÷ 7). El capital de trabajo se recupera al final del año 5.`;
+}
+
+/* ======== SUPUESTOS ======== */
+function drawSup(R){
+  const Pp=P(), D=R.D, T=[
+   ["Planta"],["Producción de hoy","27,5 lotes de 1.400 kg por mes","Dato del caso (p. 9: 26 a 29)"],["Capacidad nominal calculada de hoy",`${fmt(Pp.prod_real/D.eta,2)} lotes por mes (las refinadoras)`,"Cálculo; el caso informa 29"],["Eficiencia",pct(D.eta,1),"Cálculo: producción real ÷ capacidad nominal"],
+   ["Mezcla de productos",`${pct(D.cacao,1)} de cacao promedio`,"Supuesto consistente con el caso (p. 4)"],["Tostadora","250 kg por carga en 1,5 h (tueste + enfriado)","Dato (p. 6); que el enfriado ocupe la máquina es supuesto"],
+   ["Refinadora con molino","12 h por lote + 3 h de molino","Supuesto (p. 9: ~15 h en total)"],["Cuándo se suma un turno","cuando la producción pasa el 90 % de la capacidad","Supuesto (colchón para evitar colas)"],
+   ["Puesta en marcha (año 1)","molino en junio · turnos nuevos desde julio · 2.ª mezcladora en octubre: la capacidad del año 1 es el promedio por meses","Supuesto (plan de implementación); la inversión va al año 0"],
+   ["Demanda"],["Demanda de hoy","29 lotes por mes","Dato del caso (p. 9)"],["Demanda en ene-06","baja +50 %, media +100 %, alta +150 %","Dato del caso (p. 10)"],["Año 1 y siguientes","año 1 = promedio entre hoy y ene-06; después +15 % por año","Supuesto; dato del segmento premium (p. 3)"],
+   ["Economía"],["Ventas por lote",`US$ ${fmt(Pp.venta_lote)}`,"Supuesto (p. 9: «bastante más de US$ 30.000»)"],["Margen de contribución",pct(Pp.mc),"Dato del caso (p. 9)"],["Gastos de estructura","5 % de las ventas nuevas","Supuesto"],
+   ["Costo de un puesto-turno","US$ 70.000 por año (1,4 personas × US$ 50.000)","Supuesto"],
+   ["Inversiones","molino US$ 300 mil · 2.ª mezcladora usada US$ 50 mil","Datos del caso (pp. 9-10)"],["Capital de trabajo",pct(D.ct_pct,1)+" de las ventas nuevas","Cálculo: 1,5 meses de producto, 3 meses de granos, 30 días de cobro"],
+   ["Finanzas","tasa 15 % · impuestos 40 % · 5 años sin valor terminal","Supuestos prudentes"]];
+  $("#suptbl").innerHTML=`<thead><tr><th>Supuesto</th><th>Valor</th><th>Origen</th></tr></thead><tbody>${T.map(r=>r.length===1?`<tr class="grp"><td colspan="3">${r[0]}</td></tr>`:`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="note">${r[2]}</td></tr>`).join("")}</tbody>`;
+}
+
+/* ======== ESCENARIO 3 FRENTE AL 4 ======== */
+function drawVs34(){
+  const Pp=P(), R3=flujo(ESC[3],Pp,S.dem), R4=flujo(ESC[4],Pp,S.dem), dia=R3.capEf/Pp.dias_mes*Pp.venta_lote*Pp.mc, dias=Pp.capex_mezc/dia;
+  $("#vs34").innerHTML = `
+   <div class="kpi"><div class="k">Valor que crea (VAN)</div><div class="v">${fmt(R4.van/1e6,2)} <small>vs ${fmt(R3.van/1e6,2)}</small></div><div class="k">Escenario 4 frente al 3: <b>${R4.van>=R3.van?"+":""}${fmt((R4.van-R3.van)/1e6,2)} M</b> (${pct(R4.van/R3.van-1,1)}), casi igual</div></div>
+   <div class="kpi"><div class="k">Inversión</div><div class="v">US$ ${fmt(R4.capex/1000)} <small>vs ${fmt(R3.capex/1000)} mil</small></div><div class="k">la diferencia es la 2.ª mezcladora usada</div></div>
+   <div class="kpi"><div class="k">Mezcladoras</div><div class="v">2 × 2 <small>vs 1 × 3 turnos</small></div><div class="k">el 3 necesita <b>turno noche</b> en una máquina de los años veinte; el 4 no, y tiene respaldo</div></div>
+   <div class="kpi good"><div class="k">El seguro se paga solo</div><div class="v">${fmt(dias,1)} <small>días</small></div><div class="k">cada día de mezcladora parada cuesta <b>US$ ${fmt(dia/1000,1)} mil</b> de contribución</div></div>`;
+}
+
+/* ======== RENDER Y CONTROLES ======== */
+function render(){
+  const e=cur(), R=flujo(e,P(),S.dem); window._R=R;
+  $("#escseg").innerHTML=allEsc().map(({e:x,i})=>`<button type="button" data-v="${i}" aria-pressed="${i===S.esc}">${x.code==="Base"?"Base":x.code==="m"?"A medida":"Escenario "+x.code}<small>US$ ${fmt(capexOf(x,P())/1000)} mil</small></button>`).join("");
+  $("#escdesc").innerHTML=`<b>${e.nombre} · ${e.corto}.</b> ${e.txt}`;
+  $("#anioseg").innerHTML=[1,2,3,4,5].map(a=>`<button type="button" data-v="${a}" aria-pressed="${a===S.anio}">Año ${a}<small>${PER[a-1].slice(0,6)}</small></button>`).join("");
+  document.querySelectorAll("#demseg button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.dem)));
+  drawKpis(R); drawFlow(R); drawEscTable(); drawVs34(); drawEscCharts(); drawYears(R); drawSup(R); sync();
+}
+function sync(){
+  const act=document.activeElement, e=cur();
+  document.querySelectorAll("[data-p]").forEach(el=>{ if(el!==act){ const sc=+(el.dataset.scale||1); el.value=String(Math.round(S[el.dataset.p]*sc*1e6)/1e6); } });
+  document.querySelectorAll("[data-a]").forEach(el=>{ if(el===act) return; const k=el.dataset.a; if(el.type==="checkbox") el.checked=!!e[k]; else el.value=String(e[k]); });
+}
+function setA(k,v){ if(S.esc!=="m"){ const b=cur(); S.custom={...b, code:"m", nombre:"Escenario a medida", corto:"armado con los selectores del diagrama", txt:`Parte del ${b.nombre} y cambia turnos o equipos.`}; S.esc="m"; } S.custom[k]=v; render(); }
+document.addEventListener("change",ev=>{ const el=ev.target;
+  if(el.dataset.p){ const v=parseFloat(el.value); if(!isFinite(v)) return; const lo=+el.min, hi=el.max?+el.max:Infinity; if(v<lo||v>hi) return; S[el.dataset.p]=v/(+(el.dataset.scale||1)); render(); }
+  else if(el.dataset.a){ const v=el.type==="checkbox"?(el.checked?1:0):parseInt(el.value,10); if(cur()[el.dataset.a]!==v) setA(el.dataset.a,v); } });
+document.addEventListener("click",ev=>{ const b=ev.target.closest("button"), t=ev.target.closest("[data-pick]"), a=ev.target.closest("[data-anio]");
+  if(b&&b.closest("#escseg")){ const v=b.dataset.v; S.esc=v==="m"?"m":+v; render(); }
+  else if(b&&b.closest("#demseg")){ S.dem=+b.dataset.v; render(); }
+  else if(b&&b.closest("#anioseg")){ S.anio=+b.dataset.v; render(); }
+  else if(b&&b.id==="reset"){ S=fresh(); render(); }
+  else if(t){ const v=t.dataset.pick; S.esc=v==="m"?"m":+v; render(); }
+  else if(a){ S.anio=+a.dataset.anio; render(); } });
+
+/* ======== GRANOS DE CACAO (ilustración del encabezado) ======== */
+(function(){ const c=document.getElementById("beans"); if(!c||!c.getContext) return; const ctx=c.getContext("2d"), reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches; let W=0,H=0,beans=[];
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  function setup(){ const dpr=Math.min(2,window.devicePixelRatio||1); W=c.clientWidth; H=c.clientHeight; c.width=W*dpr; c.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    beans=Array.from({length:Math.round(W/70)},()=>{ const depth=rnd(.35,1); return {x:rnd(W*.4,W*1.02),y:rnd(-10,H+10),s:rnd(10,32)*depth,r:rnd(0,6.28),vr:rnd(-.0025,.0025),a:rnd(0,6.28),va:rnd(.004,.009),amp:rnd(4,12),depth}; }); }
+  function frame(){ ctx.clearRect(0,0,W,H); beans.sort((p,q)=>p.depth-q.depth).forEach(b=>{ if(!reduce){b.a+=b.va;b.r+=b.vr;} const y=b.y+Math.sin(b.a)*b.amp, x=b.x+Math.cos(b.a*.7)*b.amp*.5, s=b.s;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(b.r); ctx.globalAlpha=.35+.6*b.depth; const g=ctx.createRadialGradient(-s*.35,-s*.25,s*.1,0,0,s*1.05); g.addColorStop(0,"#8A5234"); g.addColorStop(.55,"#4E2C1B"); g.addColorStop(1,"#26150D");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,0,s,s*.58,0,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="rgba(20,10,6,.65)"; ctx.lineWidth=Math.max(1,s*.07); ctx.beginPath(); ctx.moveTo(-s*.82,s*.06); ctx.quadraticCurveTo(0,-s*.16,s*.82,s*.04); ctx.stroke(); ctx.restore(); });
+    ctx.globalAlpha=1; if(!reduce) requestAnimationFrame(frame); }
+  setup(); requestAnimationFrame(frame); let to; window.addEventListener("resize",()=>{ clearTimeout(to); to=setTimeout(()=>{ setup(); if(reduce) frame(); },150); });
+})();
+
+buildOverlay(); render();
+</script>
+</body>
+</html>
